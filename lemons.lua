@@ -29,6 +29,7 @@ local ev = {
 
 function file_to_str(filepath)
   local f = io.open(filepath, "r")
+  if not f then return "" end
   local t = f:read("*a")
   f:close()
   return t
@@ -36,6 +37,7 @@ end
 
 function cmd_to_str(cmd)
   local f = io.popen(cmd, "r")
+  if not f then return "" end
   local t = f:read("*a")
   f:close()
   return t
@@ -53,7 +55,7 @@ end
 
 function buffer_set_pos(pos)
   local t = { l = "%{l}", r = "%{r}", c = "%{c}" }
-  buffer_add(t[pos])
+  buffer_add(t[pos] or "")
 end
 
 local sw = false
@@ -78,6 +80,7 @@ function put_mpd()
   local mpd = f:read("*l")
   local playing = f:read("*l")
   buffer_add(playing:find("playing") and mpd or "[paused]")
+  f:close()
 end
 
 function put_time()

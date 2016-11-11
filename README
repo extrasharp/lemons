@@ -1,7 +1,15 @@
-intermediary bar thing
-to the tune of
-  monsterwm | luajit lemons.lua | lemonbar
+mel window mgr scripts
 
-note, i use a modified monsterwm which outputs already formatted desktop info
+mpc_next.lua
+  previous song
+  next song
+  toggle play or pause
 
-thanks
+switch_desktop.lua
+  rotate through desktops
+
+lemons.lua
+  intermediary bar thing
+  to the tune of
+    monsterwm | luajit lemons.lua | lemonbar
+  note, i use a modified monsterwm which outputs already formatted desktop info
