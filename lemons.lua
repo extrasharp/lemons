@@ -1,3 +1,5 @@
+#!/usr/bin/luajit
+
 local string = require "string"
 local fmt = string.format
 
@@ -30,7 +32,7 @@ local ev = {
 function file_to_str(filepath)
   local f = io.open(filepath, "r")
   if not f then return "" end
-  local t = f:read("*a")
+  local t = f:read("*a") or ""
   f:close()
   return t
 end
@@ -38,7 +40,7 @@ end
 function cmd_to_str(cmd)
   local f = io.popen(cmd, "r")
   if not f then return "" end
-  local t = f:read("*a")
+  local t = f:read("*a") or ""
   f:close()
   return t
 end
@@ -63,7 +65,7 @@ local sw = false
 function put_batt()
   local capa = file_to_str("/sys/class/power_supply/BAT0/capacity")
   local stat = file_to_str("/sys/class/power_supply/BAT0/status"):sub(1,1)
-  local capa_int = tonumber(capa)
+  local capa_int = tonumber(capa) or 0
   local status_strs = { D = "b", C = "c", F = "f", U = "x" }
   if capa_int < 9 and stat == "D" then
     os.execute("notify-send 'battery very low'")
@@ -77,17 +79,18 @@ end
 
 function put_mpd()
   local f = io.popen("mpc -f '%artist% >> %title% >> %album%'")
-  local mpd = f:read("*l")
-  local playing = f:read("*l")
+  if not f then do return end end
+  local mpd = f:read("*l") or ""
+  local playing = f:read("*l") or ""
   buffer_add(playing:find("playing") and mpd or "[paused]")
   f:close()
 end
 
 function put_time()
-  local time = cmd_to_str("date +'%I %M %S'")
+  local time = cmd_to_str("date +'%I%M%S'")
   local hr  = time:sub(1, 2)
-  local min = time:sub(4, 5)
-  local sec = tonumber(time:sub(7, 8))
+  local min = time:sub(3, 4)
+  local sec = tonumber(time:sub(5, 6)) or 0
   sec = sec - (sec % 3)
   local time = fmt("♡ %s, %s, %02d ♡", hr, min, sec)
   buffer_add(time)
@@ -113,15 +116,19 @@ function main()
     end
 
     buffer_clear()
+
     buffer_set_pos("l")
     buffer_add(desktop_info)
+
     buffer_set_pos("c")
     put_mpd()
+
     buffer_set_pos("r")
     put_time()
     buffer_add(" ")
     put_batt()
-    io.write(buffer.."\n")
+
+    io.write(buffer, "\n")
     io.flush()
   end
 end

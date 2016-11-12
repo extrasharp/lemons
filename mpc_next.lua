@@ -8,7 +8,7 @@ end
 
 local f = io.popen("mpc --format ''")
 if not f then do return end end
-local t = f:read("*a")
+local t = f:read("*a") or ""
 f:close()
 
 local playing
