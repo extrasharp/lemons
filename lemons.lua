@@ -5,6 +5,21 @@ local fmt = string.format
 
 local ffi = require "ffi"
 ffi.cdef [[
+typedef int mqd_t;
+typedef int ssize_t;
+
+mqd_t mq_open(const char *, int);
+int mq_close(mqd_t);
+int mq_send(mqd_t, const char *, size_t, unsigned int);
+ssize_t mq_receive(mqd_t, char *, size_t, unsigned int *);
+
+struct msg {
+  int do_quit;
+  int current;
+  int windows[6];
+  int urgent[6];
+};
+
 struct pollfds {
   int fd;
   short int events;
@@ -12,21 +27,28 @@ struct pollfds {
 };
 int poll(struct pollfds *fds, unsigned long nfds, int timeout);
 ]]
+local rt = ffi.load("rt")
 local bit = require "bit"
-local ev = {
-    POLLIN = 0x001
-  , POLLPRI = 0x002
-  , POLLOUT = 0x004
-  , POLLRDNORM = 0x040
-  , POLLRDBAND = 0x080
-  , POLLWRNORM = 0x100
-  , POLLWRBAND = 0x200
-  , POLLMSG = 0x400
-  , POLLREMOVE = 0x1000
-  , POLLRDHUP = 0x2000
-  , POLLERR = 0x008
-  , POLLHUP = 0x010
-  , POLLNVAL = 0x020
+local POLL = {
+    IN = 0x001
+  , PRI = 0x002
+  , OUT = 0x004
+  , RDNORM = 0x040
+  , RDBAND = 0x080
+  , WRNORM = 0x100
+  , WRBAND = 0x200
+  , MSG = 0x400
+  , REMOVE = 0x1000
+  , RDHUP = 0x2000
+  , ERR = 0x008
+  , HUP = 0x010
+  , NVAL = 0x020
+}
+
+local O = {
+    RDONLY = 00
+  , WRONLY = 01
+  , RDWR = 02
 }
 
 function file_to_str(filepath)
@@ -96,23 +118,58 @@ function put_time()
   buffer_add(time)
 end
 
+local desktop_names = {
+    "love♡"
+  , "kiss♡"
+  , "yay ♡"
+  , "22 ♡♡"
+  , "♡ //n"
+  , "(oo )"
+}
+
+function process_desktop_info(msg)
+  local ret = ""
+  for i = 0, 5 do
+    local indc = " "
+    if i == msg[0].current then
+      indc = "#"
+    elseif msg[0].urgent[i] > 0 then
+      indc = "*"
+    elseif msg[0].windows[i] > 0 then
+      indc = "."
+    end
+    ret = fmt("%s%s%s%s", ret, indc, desktop_names[i + 1], indc)
+  end
+  return ret
+end
+
 function main()
   local pfds = ffi.new("struct pollfds[1]")
-  pfds[0].fd = 0
-  pfds[0].events = ev.POLLIN
+  local mqd = -1
+
+  while mqd < 0 do
+    mqd = rt.mq_open("/monsterwm", O.RDONLY)
+    ffi.C.poll(nil, 0, 500)
+  end
+
+  pfds[0].fd = mqd
+  pfds[0].events = POLL.IN
+
+  local raw_info = ffi.new("struct msg[1]");
 
   local desktop_info = ""
 
   while true do
     local res = ffi.C.poll(pfds[0], 1, 1000);
-    -- res of 0 means timedout
     if res > 0 then
-      if (bit.band(pfds[0].revents, ev.POLLIN) ~= 0) then
-        desktop_info = io.read("*l") or desktop_info
-      elseif (bit.band(pfds[0].revents, ev.POLLHUP) ~= 0) then
-        io.write("goodbye\n")
-        break
-      end
+      if (bit.band(pfds[0].revents, POLL.IN) ~= 0) then
+        rt.mq_receive(mqd, ffi.cast("char *", raw_info), ffi.sizeof("struct msg"), nil);
+        if raw_info[0].do_quit == 1 then
+          io.write "goodbye\n"
+          break
+        else
+          desktop_info = process_desktop_info(raw_info)
+        end
     end
 
     buffer_clear()

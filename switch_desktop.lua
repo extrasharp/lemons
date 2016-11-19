@@ -9,7 +9,7 @@ local save_loc = "/home/mel/.last_desktop"
 
 local files = {
     "~/images/inspiration/bugs/aphids.jpg"
-  , "~/images/inspiration/textures/pink_slime.jpg"
+  -- , "~/images/inspiration/textures/pink_slime.jpg"
   , "~/desktop/sort\\ later/aaaa.png"
   , "~/desktop/sort\\ later/twisty.jpg"
 }
