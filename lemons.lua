@@ -170,6 +170,7 @@ function main()
         else
           desktop_info = process_desktop_info(raw_info)
         end
+      end
     end
 
     buffer_clear()
