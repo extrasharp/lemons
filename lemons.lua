@@ -1,16 +1,17 @@
 #!/usr/bin/luajit
 
+-- TODO debug mode (dont spawn bar) (print to stdout)
+
 local string = require "string"
 local fmt = string.format
+
+-- low level
 
 local ffi = require "ffi"
 ffi.cdef [[
 typedef int mqd_t;
 typedef int ssize_t;
-
 mqd_t mq_open(const char *, int);
-int mq_close(mqd_t);
-int mq_send(mqd_t, const char *, size_t, unsigned int);
 ssize_t mq_receive(mqd_t, char *, size_t, unsigned int *);
 
 struct msg {
@@ -25,10 +26,13 @@ struct pollfds {
   short int events;
   short int revents;
 };
-int poll(struct pollfds *fds, unsigned long nfds, int timeout);
+
+int poll(struct pollfds *, unsigned long, int);
 ]]
-local rt = ffi.load("rt")
+
+local rt = ffi.load "rt"
 local bit = require "bit"
+
 local POLL = {
     IN = 0x001
   , PRI = 0x002
@@ -67,24 +71,43 @@ function cmd_to_str(cmd)
   return t
 end
 
-local buffer = ""
+-- buffer
 
-function buffer_clear()
-  buffer = ""
+local buffer = {}
+
+function buffer:new(b)
+  b = b or { "" }
+  setmetatable(b, self)
+  self.__index = self
+  return b
 end
 
-function buffer_add(text)
-  buffer = fmt("%s%s", buffer, text)
+function buffer:clear()
+  self[1] = ""
 end
 
-function buffer_set_pos(pos)
+function buffer:add(text)
+  self[1] = fmt("%s%s", self[1], text or "")
+end
+
+function buffer:to_str()
+  return self[1]
+end
+
+function buffer:set_pos(pos)
   local t = { l = "%{l}", r = "%{r}", c = "%{c}" }
-  buffer_add(t[pos] or "")
+  self:add(t[pos] or "")
+end
+
+function buffer:set_colors(fgc, bgc)
+  self:add(fmt("%s%s"
+    , fgc and fmt("%%{F%s}", fgc) or ""
+    , bgc and fmt("%%{B%s}", bgc) or ""))
 end
 
 local sw = false
 
-function put_batt()
+function buffer:put_batt()
   local capa = file_to_str("/sys/class/power_supply/BAT0/capacity")
   local stat = file_to_str("/sys/class/power_supply/BAT0/status"):sub(1,1)
   local capa_int = tonumber(capa) or 0
@@ -95,58 +118,77 @@ function put_batt()
     os.execute("notify-send 'battery low'")
   end
   sw = not sw
-  buffer_add(status_strs[stat] or "?")
-  buffer_add(fmt("%3d", capa_int))
+  self:add(status_strs[stat] or "?")
+  self:add(fmt("%3d", capa_int))
 end
 
-function put_mpd()
+function buffer:put_mpd()
   local f = io.popen("mpc -f '%artist% >> %title% >> %album%'")
   if not f then do return end end
   local mpd = f:read("*l") or ""
   local playing = f:read("*l") or ""
-  buffer_add(playing:find("playing") and mpd or "[paused]")
+  self:add(playing:find("playing") and mpd or ".paused.")
   f:close()
 end
 
-function put_time()
+function buffer:put_time()
   local time = cmd_to_str("date +'%I%M%S'")
   local hr  = time:sub(1, 2)
   local min = time:sub(3, 4)
   local sec = tonumber(time:sub(5, 6)) or 0
   sec = sec - (sec % 3)
   local time = fmt("♡ %s, %s, %02d ♡", hr, min, sec)
-  buffer_add(time)
+  self:add(time)
 end
 
+function buffer:put_anim(anim)
+  if not anim.cur or anim.cur > #anim then
+    anim.cur = 1
+  end
+  self:add(anim[anim.cur])
+  anim.cur = anim.cur + 1
+end
+
+-- more stuff
+
 local desktop_names = {
-    "love♡"
-  , "kiss♡"
-  , "yay ♡"
-  , "22 ♡♡"
-  , "♡ //n"
-  , "(oo )"
+    "love♡", "kiss♡", "yay ♡"
+  , "22 ♡♡", "♡9 10", "(vv^)"
 }
 
 function process_desktop_info(msg)
   local ret = ""
   for i = 0, 5 do
     local indc = " "
-    if i == msg[0].current then
+    if i == msg.current then
       indc = "#"
-    elseif msg[0].urgent[i] > 0 then
+    elseif msg.urgent[i] > 0 then
       indc = "*"
-    elseif msg[0].windows[i] > 0 then
+    elseif msg.windows[i] > 0 then
       indc = "."
     end
-    ret = fmt("%s%s%s%s", ret, indc, desktop_names[i + 1], indc)
+    ret = fmt(i < 5 and "%s%s%s%s " or "%s%s%s%s", ret, indc, desktop_names[i + 1], indc)
   end
   return ret
 end
 
+local colors = {
+    bg = "#222222"
+  , fg = "#AAAAAA"
+  , reset = "-"
+}
+
+local anim1 = {
+    " (oo"
+  , " (oo"
+  , "★(-o"
+}
+
+-- main
+
 function main()
   local pfds = ffi.new("struct pollfds[1]")
   local mqd = -1
-
   while mqd < 0 do
     mqd = rt.mq_open("/monsterwm", O.RDONLY)
     ffi.C.poll(nil, 0, 500)
@@ -157,6 +199,12 @@ function main()
 
   local raw_info = ffi.new("struct msg[1]");
 
+  local bar = io.popen(  
+  '~/documents/programming/c/windowmgrs/bar/lemonbar -f "tewi:pixelsize=10"'..
+  ' -f "Kochi Gothic:pixelsize=10:antialias=false"'..
+  ' -B "'..colors.bg..'" -F "'..colors.fg..'" -g x12', "w")
+
+  local buf = buffer:new()
   local desktop_info = ""
 
   while true do
@@ -168,27 +216,37 @@ function main()
           io.write "goodbye\n"
           break
         else
-          desktop_info = process_desktop_info(raw_info)
+          desktop_info = process_desktop_info(raw_info[0])
         end
       end
     end
 
-    buffer_clear()
+    buf:clear()
 
-    buffer_set_pos("l")
-    buffer_add(desktop_info)
+    buf:set_pos("l")
+    buf:set_colors(colors.bg, colors.fg)
+    buf:add(desktop_info)
+    buf:set_colors(colors.fg, colors.bg)
+    buf:add("")
 
-    buffer_set_pos("c")
-    put_mpd()
+    buf:set_pos("c")
+    buf:put_mpd()
 
-    buffer_set_pos("r")
-    put_time()
-    buffer_add(" ")
-    put_batt()
+    buf:set_pos("r")
+    buf:add("")
+    buf:set_colors(colors.bg, colors.fg)
+    buf:put_anim(anim1)
+    buf:add(" ")
+    buf:put_time()
+    buf:add(" ")
+    buf:put_batt()
+    buf:set_colors(colors.reset, colors.reset)
 
-    io.write(buffer, "\n")
-    io.flush()
+    bar:write(buf:to_str(), "\n")
+    bar:flush()
   end
+
+  bar:close()
 end
 
 main()
