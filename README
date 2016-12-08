@@ -1,4 +1,4 @@
-mel window mgr scripts
+mel scripts
 
 mpc_next.lua
   previous song
@@ -11,5 +11,9 @@ switch_desktop.lua
 lemons.lua
   intermediary bar thing
   to the tune of
-    monsterwm | luajit lemons.lua | lemonbar
-  note, i use a modified monsterwm which outputs already formatted desktop info
+    monsterwm
+    ./lemons.lua
+  note, i use a modified monsterwm which talks to the bar via ipc
+
+touchoff.lua
+  turn off wacom touch capabilities

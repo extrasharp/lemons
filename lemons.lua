@@ -1,7 +1,5 @@
 #!/usr/bin/luajit
 
--- TODO debug mode (dont spawn bar) (print to stdout)
-
 local string = require "string"
 local fmt = string.format
 
@@ -112,10 +110,12 @@ function buffer:put_batt()
   local stat = file_to_str("/sys/class/power_supply/BAT0/status"):sub(1,1)
   local capa_int = tonumber(capa) or 0
   local status_strs = { D = "b", C = "c", F = "f", U = "x" }
-  if capa_int < 9 and stat == "D" then
-    os.execute("notify-send 'battery very low'")
-  elseif sw and capa_int < 15 and stat == "D" then
-    os.execute("notify-send 'battery low'")
+  if stat == "D" then
+    if capa_int < 9 then
+      os.execute("notify-send 'battery very low'")
+    elseif sw and capa_int < 15 then
+      os.execute("notify-send 'battery low'")
+    end
   end
   sw = not sw
   self:add(status_strs[stat] or "?")
@@ -191,7 +191,7 @@ function main()
   local mqd = -1
   while mqd < 0 do
     mqd = rt.mq_open("/monsterwm", O.RDONLY)
-    ffi.C.poll(nil, 0, 500)
+    ffi.C.poll(nil, 0, 100)
   end
 
   pfds[0].fd = mqd
@@ -199,10 +199,12 @@ function main()
 
   local raw_info = ffi.new("struct msg[1]");
 
-  local bar = io.popen(  
-  '~/documents/programming/c/windowmgrs/bar/lemonbar -f "tewi:pixelsize=10"'..
-  ' -f "Kochi Gothic:pixelsize=10:antialias=false"'..
-  ' -B "'..colors.bg..'" -F "'..colors.fg..'" -g x12', "w")
+  local bar = arg[1] == "debug" and io.stdout
+  or
+    io.popen(fmt(
+    '~/dotfiles/_wm/bar/lemonbar -f "tewi:pixelsize=10"'..
+    ' -f "Kochi Gothic:pixelsize=10:antialias=false"'..
+    ' -B "%s" -F "%s" -g x12', colors.bg, colors.fg), "w")
 
   local buf = buffer:new()
   local desktop_info = ""
@@ -240,6 +242,7 @@ function main()
     buf:put_time()
     buf:add(" ")
     buf:put_batt()
+
     buf:set_colors(colors.reset, colors.reset)
 
     bar:write(buf:to_str(), "\n")
