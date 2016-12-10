@@ -6,7 +6,7 @@ mpc_next.lua
   toggle play or pause
 
 switch_desktop.lua
-  rotate through desktops
+  rotate through desktop images
 
 lemons.lua
   intermediary bar thing

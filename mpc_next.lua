@@ -3,11 +3,11 @@
 if    arg[1] ~= "next"
   and arg[1] ~= "prev"
   and arg[1] ~= "toggle" then
-    do return end
+    return 
 end
 
 local f = io.popen("mpc --format ''")
-if not f then do return end end
+if not f then return end
 local t = f:read("*a") or ""
 f:close()
 
@@ -25,7 +25,7 @@ if arg[1] == "next" then
   end
 elseif arg[1] == "prev" then
   local _, _, sec = t:find("%:(%d+)%/")
-  if not sec then do return end end
+  if not sec then return end
 
   sec = tonumber(sec)
 

@@ -2,20 +2,20 @@
 
 if    arg[1] ~= "next"
   and arg[1] ~= "prev" then
-    do return end
+    return 
 end
 
 local save_loc = "/home/mel/.last_desktop"
 
 local files = {
     "~/images/inspiration/bugs/aphids.jpg"
-  -- , "~/images/inspiration/textures/pink_slime.jpg"
+  , "~/images/inspiration/micro/acid_fast_leprae.jpg"
   , "~/desktop/sort\\ later/aaaa.png"
   , "~/desktop/sort\\ later/twisty.jpg"
 }
 
 local f = io.open(save_loc, "r")
-if not f then do return end end
+if not f then return end
 local desktop = f:read("*a")
 f:close()
 

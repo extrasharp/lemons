@@ -53,7 +53,7 @@ local O = {
   , RDWR = 02
 }
 
-function file_to_str(filepath)
+local function file_to_str(filepath)
   local f = io.open(filepath, "r")
   if not f then return "" end
   local t = f:read("*a") or ""
@@ -61,7 +61,7 @@ function file_to_str(filepath)
   return t
 end
 
-function cmd_to_str(cmd)
+local function cmd_to_str(cmd)
   local f = io.popen(cmd, "r")
   if not f then return "" end
   local t = f:read("*a") or ""
@@ -69,15 +69,97 @@ function cmd_to_str(cmd)
   return t
 end
 
+local function clone(t)
+  local ret = {}
+  for k, v in pairs(t) do
+      ret[k] = type(v) == "table" and clone(v) or v
+  end
+  return ret
+end
+
+local obj = {
+  __call = function (self, ...)
+    if self.new then
+      return self.new(...)
+    end
+  end
+}
+
+setmetatable(obj, obj)
+
+function obj.new()
+  local ret = {}
+  ret.__index = ret
+  return setmetatable(ret, obj)
+end
+
+-- animations
+
+local anim = obj()
+
+function anim.new(t)
+  local new = clone(t)
+  new.cur = 1
+  return setmetatable(new, anim)
+end
+
+function anim:peek()
+  return self[self.cur]
+end
+
+function anim:next()
+  self.cur = self.cur + 1
+  if self.cur > #self then
+    self.cur = 1
+  end
+  return self:peek()
+end
+
+-- desktops
+
+local desktop_info = obj()
+
+function desktop_info.new(t)
+  local names = clone(t)
+  return setmetatable({
+      names = names ,
+      ct = #names   ,
+      current = 1   ,
+      urgent = {}   ,
+      windows = {}  ,
+    }, desktop_info)
+end
+
+function desktop_info:set(raw)
+  for i = 0, 5 do
+    self.urgent[i + 1] = raw.urgent[i]
+    self.windows[i + 1] = raw.windows[i]
+  end
+  self.current = raw.current + 1
+end
+
+function desktop_info:to_str()
+  local ret = ""
+  for i = 1, 6 do
+    local indc = nil
+    if i == self.current then
+      indc = ":"
+    elseif self.urgent[i] > 0 then
+      indc = "!"
+    elseif self.windows[i] > 0 then
+      indc = "."
+    end
+    ret = indc and fmt("%s%s%s ", ret, indc, self.names[i]) or ret
+  end
+  return ret:sub(1, #ret - 1)
+end
+
 -- buffer
 
-local buffer = {}
+local buffer = obj()
 
-function buffer:new(b)
-  b = b or { "" }
-  setmetatable(b, self)
-  self.__index = self
-  return b
+function buffer.new()
+  return setmetatable({ "" }, buffer)
 end
 
 function buffer:clear()
@@ -107,9 +189,9 @@ local sw = false
 
 function buffer:put_batt()
   local capa = file_to_str("/sys/class/power_supply/BAT0/capacity")
-  local stat = file_to_str("/sys/class/power_supply/BAT0/status"):sub(1,1)
+  local stat = file_to_str("/sys/class/power_supply/BAT0/status"):sub(1, 1)
   local capa_int = tonumber(capa) or 0
-  local status_strs = { D = "b", C = "c", F = "f", U = "x" }
+  local status_strs = { D = ".", C = ":", F = ":", U = "!" }
   if stat == "D" then
     if capa_int < 9 then
       os.execute("notify-send 'battery very low'")
@@ -118,16 +200,25 @@ function buffer:put_batt()
     end
   end
   sw = not sw
+  self:add(fmt("%d", capa_int))
   self:add(status_strs[stat] or "?")
-  self:add(fmt("%3d", capa_int))
 end
+
+local paused = anim {
+  "   (__" ,
+  "   (__" ,
+  "   (__" ,
+  "  z(__" ,
+  " z (__" ,
+  "z  (__" ,
+}
 
 function buffer:put_mpd()
   local f = io.popen("mpc -f '%artist% >> %title% >> %album%'")
-  if not f then do return end end
+  if not f then return end
   local mpd = f:read("*l") or ""
   local playing = f:read("*l") or ""
-  self:add(playing:find("playing") and mpd or ".paused.")
+  self:add(playing:find("playing") and mpd or paused:next())
   f:close()
 end
 
@@ -137,67 +228,41 @@ function buffer:put_time()
   local min = time:sub(3, 4)
   local sec = tonumber(time:sub(5, 6)) or 0
   sec = sec - (sec % 3)
-  local time = fmt("♡ %s, %s, %02d ♡", hr, min, sec)
+  local time = fmt("♡ %s:%s.%02d ♡", hr, min, sec)
   self:add(time)
 end
-
-function buffer:put_anim(anim)
-  if not anim.cur or anim.cur > #anim then
-    anim.cur = 1
-  end
-  self:add(anim[anim.cur])
-  anim.cur = anim.cur + 1
-end
-
--- more stuff
-
-local desktop_names = {
-    "love♡", "kiss♡", "yay ♡"
-  , "22 ♡♡", "♡9 10", "(vv^)"
-}
-
-function process_desktop_info(msg)
-  local ret = ""
-  for i = 0, 5 do
-    local indc = " "
-    if i == msg.current then
-      indc = "#"
-    elseif msg.urgent[i] > 0 then
-      indc = "*"
-    elseif msg.windows[i] > 0 then
-      indc = "."
-    end
-    ret = fmt(i < 5 and "%s%s%s%s " or "%s%s%s%s", ret, indc, desktop_names[i + 1], indc)
-  end
-  return ret
-end
-
-local colors = {
-    bg = "#222222"
-  , fg = "#AAAAAA"
-  , reset = "-"
-}
-
-local anim1 = {
-    " (oo"
-  , " (oo"
-  , "★(-o"
-}
 
 -- main
 
 function main()
-  local pfds = ffi.new("struct pollfds[1]")
   local mqd = -1
   while mqd < 0 do
     mqd = rt.mq_open("/monsterwm", O.RDONLY)
     ffi.C.poll(nil, 0, 100)
   end
 
+  local pfds = ffi.new("struct pollfds[1]")
   pfds[0].fd = mqd
   pfds[0].events = POLL.IN
 
   local raw_info = ffi.new("struct msg[1]");
+
+  local info = desktop_info {
+    "lov♡" , "kis♡" , "ya ♡" ,
+    "2 ♡♡" , "♡jx " , "(vv)" ,
+  }
+
+  local colors = {
+    bg = "#191919" ,
+    fg = "#AAAAAA" ,
+    reset = "-"    ,
+  }
+
+  local star_wink = anim {
+    " (oo" ,
+    " (oo" ,
+    "★(-o" ,
+  }
 
   local bar = arg[1] == "debug" and io.stdout
   or
@@ -206,8 +271,7 @@ function main()
     ' -f "Kochi Gothic:pixelsize=10:antialias=false"'..
     ' -B "%s" -F "%s" -g x12', colors.bg, colors.fg), "w")
 
-  local buf = buffer:new()
-  local desktop_info = ""
+  local buf = buffer()
 
   while true do
     local res = ffi.C.poll(pfds[0], 1, 1000);
@@ -218,7 +282,7 @@ function main()
           io.write "goodbye\n"
           break
         else
-          desktop_info = process_desktop_info(raw_info[0])
+          info:set(raw_info[0])
         end
       end
     end
@@ -227,7 +291,7 @@ function main()
 
     buf:set_pos("l")
     buf:set_colors(colors.bg, colors.fg)
-    buf:add(desktop_info)
+    buf:add(info:to_str())
     buf:set_colors(colors.fg, colors.bg)
     buf:add("")
 
@@ -237,7 +301,7 @@ function main()
     buf:set_pos("r")
     buf:add("")
     buf:set_colors(colors.bg, colors.fg)
-    buf:put_anim(anim1)
+    buf:add(star_wink:next())
     buf:add(" ")
     buf:put_time()
     buf:add(" ")
