@@ -53,18 +53,18 @@ local O = {
   , RDWR = 02
 }
 
-local function file_to_str(filepath)
+local function file_to_str(filepath, read)
   local f = io.open(filepath, "r")
   if not f then return "" end
-  local t = f:read("*a") or ""
+  local t = f:read(read or "*a") or ""
   f:close()
   return t
 end
 
-local function cmd_to_str(cmd)
+local function cmd_to_str(cmd, read)
   local f = io.popen(cmd, "r")
   if not f then return "" end
-  local t = f:read("*a") or ""
+  local t = f:read(read or "*a") or ""
   f:close()
   return t
 end
@@ -86,6 +86,7 @@ local obj = {
 }
 
 setmetatable(obj, obj)
+obj.__index = obj
 
 function obj.new()
   local ret = {}
@@ -98,9 +99,9 @@ end
 local anim = obj()
 
 function anim.new(t)
-  local new = clone(t)
-  new.cur = 1
-  return setmetatable(new, anim)
+  local ret = clone(t)
+  ret.cur = 1
+  return setmetatable(ret, anim)
 end
 
 function anim:peek()
@@ -214,12 +215,34 @@ local paused = anim {
 }
 
 function buffer:put_mpd()
-  local f = io.popen("mpc -f '%artist% >> %title% >> %album%'")
-  if not f then return end
-  local mpd = f:read("*l") or ""
-  local playing = f:read("*l") or ""
-  self:add(playing:find("playing") and mpd or paused:next())
-  f:close()
+  local tags = {}
+  function mpd_get(tag)
+    if tag == "paused" then
+      local f = io.popen("mpc -f ''")
+      if not f then goto out end
+      f:read("*l")
+      local status = f:read("*l") or ""
+      tags.playing = status:find("playing")
+      f:close()
+      goto out
+    end
+
+    do
+      local get = cmd_to_str(fmt("mpc -f '%%%s%%'", tag), "*l")
+      if get ~= "" then
+        tags[tag] = get
+      end
+    end
+
+    ::out::
+    return mpd_get
+  end
+
+  mpd_get "artist" "title" "file" "album" "paused"
+  local _, _, file = tags.file:find("(%w+%.%w+)")
+  self:add(tags.playing
+    and fmt("%s >> %s >> %s", tags.artist, tags.title or file, tags.album)
+    or  paused:next())
 end
 
 function buffer:put_time()
