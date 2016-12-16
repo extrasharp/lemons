@@ -17,4 +17,6 @@ local device_num = tonumber(str)
 if not device_num then return end
 
 io.write("turning ", arg[1], "\n")
-os.execute(fmt("xinput set-prop %d \"Device Enabled\" %d", device_num, arg[1] == "on" and 1 or 0))
+os.execute(fmt("xinput set-prop %d \"Device Enabled\" %d"
+  , device_num
+  , arg[1] == "on" and 1 or 0))

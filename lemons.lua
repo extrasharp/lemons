@@ -58,17 +58,17 @@ local O = {
 local function file_to_str(filepath, read)
   local f = io.open(filepath, "r")
   if not f then return "" end
-  local t = f:read(read or "*a") or ""
+  local t = f:read(read or "*a")
   f:close()
-  return t
+  return t or ""
 end
 
 local function cmd_to_str(cmd, read)
   local f = io.popen(cmd, "r")
   if not f then return "" end
-  local t = f:read(read or "*a") or ""
+  local t = f:read(read or "*a")
   f:close()
-  return t
+  return t or ""
 end
 
 local function clone(t)
@@ -83,9 +83,7 @@ end
 
 local obj = {
   __call = function (self, ...)
-    if self.new then
-      return self.new(...)
-    end
+    return self.new and self.new(...)
   end
 }
 
@@ -263,9 +261,13 @@ local oh2 = anim(oh)
 local function mpd()
   local f = io.popen(mpc_cmd)
   if not f then return end
-  local info = f:read("*l") or ""
-  local status = f:read("*l") or ""
+  local info = f:read("*l")
+  local status = f:read("*l")
   f:close()
+
+  if not (info and status) then
+    return
+  end
 
   if last_info ~= info then
     local idx = 1
@@ -285,7 +287,7 @@ local function mpd()
     fmt("%s %s %s %s %s"
       , tags.artist or ""
       , tags.artist and oh1:next() or sp1:next()
-      , tags.title  or tags.file
+      , tags.title  or  tags.file or ""
       , tags.album  and oh2:next() or sp2:prev()
       , tags.album  or "")
     or paused:next()
@@ -340,7 +342,8 @@ while true do
   local res = ffi.C.poll(pfds[0], 1, 1000);
   if res > 0 then
     if (bit.band(pfds[0].revents, POLL.IN) ~= 0) then
-      rt.mq_receive(mqd, ffi.cast("char *", raw_info), ffi.sizeof("struct msg"), nil);
+      rt.mq_receive(mqd, ffi.cast("char *", raw_info)
+                       , ffi.sizeof("struct msg"), nil)
       if raw_info[0].do_quit == 1 then
         break
       else

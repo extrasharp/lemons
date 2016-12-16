@@ -8,10 +8,10 @@ end
 local save_loc = "/home/mel/.last_desktop"
 
 local files = {
-    "~/images/inspiration/bugs/aphids.jpg"
-  , "~/images/inspiration/micro/acid_fast_leprae.jpg"
-  , "~/desktop/sort\\ later/aaaa.png"
-  , "~/desktop/sort\\ later/twisty.jpg"
+  "~/images/inspiration/bugs/aphids.jpg" ,
+  "~/images/inspiration/micro/acid_fast_leprae.jpg" ,
+  "~/desktop/sort\\ later/aaaa.png" ,
+  "~/desktop/sort\\ later/twisty.jpg" ,
 }
 
 local f = io.open(save_loc, "r")
