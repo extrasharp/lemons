@@ -17,3 +17,6 @@ lemons.lua
 
 touchoff.lua
   turn off wacom touch capabilities
+
+jack_ctl.lua
+  lil commandline interface for jack
