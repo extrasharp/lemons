@@ -14,32 +14,45 @@ local aliases = {
   mpdo1r = "'Music Player Daemon:right'" ,
 }
 
-for i=1, 8 do
-  aliases[fmt("rnsi%dl", i)] = fmt("renoise:input_%02d_left", i)
-  aliases[fmt("rnsi%dr", i)] = fmt("renoise:input_%02d_right", i)
+local function gen_aliases(base, lfmt, rfmt, start, to)
+  for i=start, to do
+    aliases[fmt("%s%dl", base, i)] = fmt(lfmt, i)
+    aliases[fmt("%s%dr", base, i)] = fmt(rfmt, i)
+  end
 end
 
-for i=1, 2 do
-  aliases[fmt("rnso%dl", i)] = fmt("renoise:output_%02d_left", i)
-  aliases[fmt("rnso%dr", i)] = fmt("renoise:output_%02d_right", i)
+local function gen_generics(base, lfmt, rfmt, ct)
+  aliases[fmt("%s1l", base)] = lfmt
+  aliases[fmt("%s1r", base)] = rfmt
+  local _, _, l1, l2 = lfmt:find("(.+):(.+)")
+  local _, _, r1, r2 = rfmt:find("(.+):(.+)")
+  for i=2, ct do
+    aliases[fmt("%s%dl", base, i)] = fmt("%s-%02d:%s", l1, i - 1, l2)
+    aliases[fmt("%s%dr", base, i)] = fmt("%s-%02d:%s", r1, i - 1, r2)
+  end
 end
 
-for i=0,2 do
-  aliases[fmt("ffxo%dl", i + 1)] = fmt("Firefox:AudioStream_%d_out_0", i)
-  aliases[fmt("ffxo%dr", i + 1)] = fmt("Firefox:AudioStream_%d_out_1", i)
-end
+gen_aliases("rnsi"
+  , "renoise:input_%02d_left"
+  , "renoise:input_%02d_right"
+  , 1, 8)
+gen_aliases("rnso"
+  , "renoise:output_%02d_left"
+  , "renoise:output_%02d_right"
+  , 1, 2)
+gen_aliases("ffxo"
+  , "Firefox:AudioStream_%d_out_0"
+  , "Firefox:AudioStream_%d_out_1"
+  , 0, 2)
 
-aliases["mpvo1l"] = "mpv:out_0"
-aliases["mpvo1r"] = "mpv:out_1"
-aliases["csdo1l"] = "csound6:output1"
-aliases["csdo1r"] = "csound6:output2"
-
-for i=1, 2 do
-  aliases[fmt("mpvo%dl", i + 1)] = fmt("mpv-%02d:out_0", i)
-  aliases[fmt("mpvo%dr", i + 1)] = fmt("mpv-%02d:out_1", i)
-  aliases[fmt("csdo%dl", i + 1)] = fmt("csound6-%02d:output1", i)
-  aliases[fmt("csdo%dr", i + 1)] = fmt("csound6-%02d:output2", i)
-end
+gen_generics("mpvo"
+  , "mpv:out_0"
+  , "mpv:out_1"
+  , 3)
+gen_generics("csdo"
+  , "csound6:output1"
+  , "csound6:output2"
+  , 3)
 
 local function do_cmd(cmd)
     -- io.write(cmd, "\n")
@@ -83,16 +96,16 @@ commands = {
 
   hello = function (t)
     local greetings = {
-      "meow", "yo", "sup?"
+      "meow", "yo", "sup?", "heya"
     }
     math.randomseed(os.time())
     math.random() math.random() math.random()
-
-    io.write(fmt("%s\n", t[0] ~= "meow" and greetings[math.random(1, 3)] or "meow"))
+    io.write(fmt("%s\n"
+      , t[0] ~= "meow" and greetings[math.random(1, #greetings)] or "meow"))
   end ,
 
   bye = function ()
-    io.write("see u\n")
+    io.write("~ see u ~\n")
     os.exit()
   end ,
 }
@@ -104,13 +117,13 @@ local function alias_cmd(main, t)
 end
 
 local cmd_aliases = {
-  bye = { "cya", "q" } ,
-  hello = { "hey", "hi", "sup?", "meow" } ,
-  connect = { "conn", "c" } ,
-  disconnect = { "disconn", "dc" } ,
-  list = { "l" } ,
+  bye              = { "cya", "q" } ,
+  hello            = { "hey", "hi", "sup?", "meow" } ,
+  connect          = { "conn", "c" } ,
+  disconnect       = { "disconn", "dc" } ,
   renoise_resample = { "rns" } ,
-  aliases = { "a" } ,
+  list             = { "l" } ,
+  aliases          = { "a" } ,
 }
 
 for k, v in pairs(cmd_aliases) do
