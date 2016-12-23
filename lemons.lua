@@ -218,9 +218,9 @@ local function batt()
   local status_strs = { D = ".", C = ":", F = ":", U = "!" }
   if stat == "D" then
     if capa_int < 9 then
-      os.execute("notify-send 'battery very low'")
+      os.execute("notify-send 'critical battery'")
     elseif sw and capa_int < 15 then
-      os.execute("notify-send 'battery low'")
+      os.execute("notify-send 'low battery'")
     end
   end
   sw = not sw
@@ -254,7 +254,7 @@ local spin = {"-", "/", "\\"}
 local sp1 = anim(spin)
 local sp2 = anim(spin)
 
-local oh = {"o ",  " o"}
+local oh = {"o ", " o"}
 local oh1 = anim(oh)
 local oh2 = anim(oh)
 
@@ -266,7 +266,7 @@ local function mpd()
   f:close()
 
   if not (info and status) then
-    return
+    return paused:next()
   end
 
   if last_info ~= info then
