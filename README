@@ -20,3 +20,6 @@ touchoff.lua
 
 jack_ctl.lua
   lil commandline interface for jack
+
+calc.lua
+  very simple, not great calulator

@@ -248,7 +248,7 @@ local function eval(str)
   end
 end
 
-if arg[1] then
+if #arg > 0 then
   eval(table.concat(arg, " "))
   return
 end
