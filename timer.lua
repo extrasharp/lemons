@@ -1,5 +1,9 @@
 #!/bin/luajit
 
+-- TODO
+--   support floats
+--   organize a little
+
 local ffi = require "ffi"
 ffi.cdef [[
 int poll(void *, int, int);
@@ -54,13 +58,15 @@ local secs = tonumber(time) * times[mult]
 local ms = secs * 1000
 local jump = 500
 
-io.write(fmt("%d seconds\n", secs))
+io.write(fmt("%d second%s\n", secs, secs ~= 1 and "s" or ""))
 
 for i = 0, ms, jump do
   sleep(jump)
-  -- io.write(i, "\n")
-  io.write(string.rep(" ", 15), "\r")
-  io.write(fmt("%.1f", i / 1000))
+
+  local str = fmt(">> %.1f %.2f%% <<", i / 1000, i * 100 / ms)
+  -- io.write(string.rep(" ", #str), "\r")
+  io.write("\r")
+  io.write(str)
   io.flush()
 end
 
