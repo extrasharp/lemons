@@ -212,8 +212,8 @@ end
 local sw = false
 
 local function batt()
-  local capa = file_to_str("/sys/class/power_supply/BAT0/capacity")
-  local stat = file_to_str("/sys/class/power_supply/BAT0/status"):sub(1, 1)
+  local capa = file_to_str("/sys/class/power_supply/BAT1/capacity")
+  local stat = file_to_str("/sys/class/power_supply/BAT1/status"):sub(1, 1)
   local capa_int = tonumber(capa) or 0
   local status_strs = { D = ".", C = ":", F = ":", U = "!" }
   if stat == "D" then
@@ -319,7 +319,7 @@ local raw_info = ffi.new("struct msg[1]");
 local bar = debug_mode and io.stdout
 or
   io.popen(fmt(
-  '~/dotfiles/_wm/bar/lemonbar -f "tewi:pixelsize=10"'..
+  '~/dotfiles/_wm/bar/lemonbar -f "lucy tewi:pixelsize=10"'..
   ' -f "Kochi Gothic:pixelsize=10:antialias=false"'..
   ' -B "%s" -F "%s" -g x12', colors.bg, colors.fg), "w")
 
