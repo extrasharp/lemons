@@ -44,7 +44,7 @@ jack_ctl.lua
     stop                  -> stop jack server
     list                  -> list all jack devices
     aliases               -> list available aliases
-    numbered_aliases      -> list cureent JACK devices, deterministically numbered
+    numbered_aliases      -> list current JACK devices, deterministically numbered
     conn [dev1] [dev2]    -> connect dev1 and dev2
     disconn [dev1] [dev2] -> disconnect dev1 and dev2
                                where devices can be the name of a jack device proper
