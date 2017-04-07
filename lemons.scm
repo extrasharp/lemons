@@ -1,7 +1,7 @@
 ;; chicken sceme
 
 (import foreign)
-(use lolevel srfi-13 utils posix irregex)
+(use lolevel utf8-srfi-13 utils posix irregex)
 
 #>
 #include <mqueue.h>
@@ -16,7 +16,7 @@ struct msg {
 
 (define mq-open
   (foreign-lambda int "mq_open" c-string int))
-(define mq-recieve
+(define mq-receive
   (foreign-lambda int "mq_receive" int c-pointer int c-pointer))
 
 (define-foreign-type msg* (c-pointer "struct msg"))
@@ -32,6 +32,7 @@ struct msg {
 (define msg.urgent (foreign-lambda* int ((msg* m) (int at)) "C_return(m->urgent[at]);"))
 
 (define (msg.do_quit? m) (not (= (msg._do_quit m) 0)))
+
 
 ;;
 
@@ -63,6 +64,12 @@ struct msg {
   (call-with-input-pipe name read-all))
 
 (define file->string read-all)
+
+(define (dnL . args)
+  (for-each
+    (lambda (it) (display it) (display " "))
+    args)
+  (newline))
 
 ;;
 
@@ -138,6 +145,23 @@ struct msg {
 
 ;;
 
+(define (msg->string m desktop-names)
+  (let ( (ret
+           (apply string-append
+             (map
+               (lambda (i name)
+                 (let ( (indc
+                          (cond ((= i (msg.current m)) ":")
+                                ((> (msg.urgent m i) 0) "!")
+                                ((> (msg.windows m i) 0) ".")
+                                (else #f))) )
+                   (or (and indc (string-append indc name " ")) "")))
+               '(0 1 2 3 4 5)
+               desktop-names))) )
+    (substring ret 0 (- (string-length ret) 1))))
+
+;;
+
 (define (colorize a b)
   (sprintf "%{F~A}%{B~A}" a b))
 
@@ -160,22 +184,25 @@ struct msg {
 CMD
 )
 
+(define desktop-names
+  '("lov♡" "kis♡" "ya ♡"
+    "2 ♡♡" "♡jx " "(vv)"))
+
 (define (get-mqd for)
   (call/cc
     (lambda (return)
       (let loop ( (num -1) )
-        (if (>= 0 num)
+        (if (>= num 0)
             (return num)
             (begin
-              (file-select #f #f 0.01)
+              ; (file-select #f #f 0.01)
               (loop (mq-open for open/rdonly))))))))
 
 (define (run)
   (let ( (mqd (get-mqd "/monsterwm"))
-         (m (make-msg))
-         ;; (info (desktop-info))
+         (msg (make-msg))
          (bar
-           (if (equal? (cadr (argv)) "debug")
+           (if (and (> (length (argv)) 1) (equal? (cadr (argv)) "debug"))
                (current-output-port)
                (open-output-pipe bar-cmd))) )
     (call/cc
@@ -183,15 +210,13 @@ CMD
         (let loop ()
           (let-values ( ((rd _) (file-select mqd #f 1)) )
             (when rd
-              (mq-receive mqd m (foreign-type-size "struct msg") '())
-              (if (msg.do_quit? m)
-                  (quit)
-                  ;; update info
-                  ))
+              (mq-receive mqd msg (foreign-type-size "struct msg") #f)
+              (when (msg.do_quit? msg)
+                (quit)))
             (display
               (sprintf "%{l}~A~A~A %{c}~A %{r}~A~A ♡ ~A ♡ ~A~A\n"
                 colors.normal
-                "info"
+                (msg->string msg desktop-names)
                 colors.invert
 
                 (get-mpd)
@@ -204,7 +229,6 @@ CMD
               )
               bar
             )
-
             (flush-output bar)
             (loop)
             ))))
