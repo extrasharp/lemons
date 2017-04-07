@@ -217,8 +217,9 @@ local function batt()
   local capa_int = tonumber(capa) or 0
   local status_strs = { D = ".", C = ":", F = ":", U = "!" }
   if stat == "D" then
+    -- os.execute("killall -s TERM dunst")
     if capa_int < 9 then
-      os.execute("notify-send 'critical battery'")
+      os.execute("notify-send -u critical 'critical battery'")
     elseif sw and capa_int < 15 then
       os.execute("notify-send 'low battery'")
     end
@@ -236,7 +237,7 @@ local paused = anim {
   "z  (__" ,
 }
 
-local sep = "║"
+local sep = "\b"
 
 local mpc_find = {
   "artist", "title", "file", "album"
@@ -265,6 +266,8 @@ local function mpd()
   local status = f:read("*l")
   f:close()
 
+  -- print(info)
+
   if not (info and status) then
     return paused:next()
   end
@@ -273,6 +276,7 @@ local function mpd()
     local idx = 1
     for str in info:gmatch(fmt("([^%s]*)%s", sep, sep)) do
       if str == "" then str = nil end
+      -- print(str)
       tags[mpc_find[idx]] = str
       idx = idx + 1
     end
@@ -281,6 +285,7 @@ local function mpd()
   end
 
   last_info = info
+  print(tags.title)
 
   local playing = status:find("playing")
   return playing and

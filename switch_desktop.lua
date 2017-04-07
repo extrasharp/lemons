@@ -12,6 +12,7 @@ local files = {
   "~/images/bgs/alien-nine.jpg" ,
   "~/images/bgs/bacteria.jpg" ,
   "~/images/bgs/yaya.jpg" ,
+  "~/images/bgs/chip.jpg" ,
   -- "~/images/bgs/ring.png" ,
   "~/images/bgs/chalkboard.jpg" ,
   -- "~/images/bgs/HQPT32.jpg" ,
