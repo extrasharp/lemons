@@ -1,7 +1,26 @@
 ;; chicken sceme
 
 (import foreign)
-(use lolevel utf8-srfi-13 utils posix irregex)
+(use posix
+     lolevel
+     utf8-srfi-13
+     irregex
+     utils)
+
+;; util
+
+(define (cmd->string name)
+  (call-with-input-pipe name read-all))
+
+(define file->string read-all)
+
+(define (dnL . args)
+  (for-each
+    (lambda (it) (display it) (display " "))
+    args)
+  (newline))
+
+;; ffi
 
 #>
 #include <mqueue.h>
@@ -19,6 +38,16 @@ struct msg {
 (define mq-receive
   (foreign-lambda int "mq_receive" int c-pointer int c-pointer))
 
+(define (get-mqd for)
+  (call/cc
+    (lambda (return)
+      (let loop ( (num -1) )
+        (if (>= num 0)
+            (return num)
+            (begin
+              ;; (file-select #f #f 0.01)
+              (loop (mq-open for open/rdonly))))))))
+
 (define-foreign-type msg* (c-pointer "struct msg"))
 
 (define (make-msg)
@@ -26,15 +55,26 @@ struct msg {
     (allocate (foreign-type-size "struct msg"))
     free))
 
-(define msg._do_quit (foreign-lambda* int ((msg* m)) "C_return(m->do_quit);"))
-(define msg.current (foreign-lambda* int ((msg* m)) "C_return(m->current);"))
-(define msg.windows (foreign-lambda* int ((msg* m) (int at)) "C_return(m->windows[at]);"))
-(define msg.urgent (foreign-lambda* int ((msg* m) (int at)) "C_return(m->urgent[at]);"))
+(define msg.do_quit? (foreign-lambda* bool ((msg* m)) "C_return(m->do_quit);"))
+(define msg.current  (foreign-lambda* int  ((msg* m)) "C_return(m->current);"))
+(define msg.windows  (foreign-lambda* int  ((msg* m) (int at)) "C_return(m->windows[at]);"))
+(define msg.urgent   (foreign-lambda* int  ((msg* m) (int at)) "C_return(m->urgent[at]);"))
+(define (msg->string m desktop-names)
+  (let ( (ret
+           (apply string-append
+             (map
+               (lambda (i name)
+                 (let ( (indc
+                          (cond ((= (msg.current m) i) ":")
+                                ((> (msg.urgent m i) 0) "!")
+                                ((> (msg.windows m i) 0) ".")
+                                (else #f))) )
+                   (or (and indc (string-append indc name " ")) "")))
+               '(0 1 2 3 4 5)
+               desktop-names))) )
+    (substring ret 0 (- (string-length ret) 1))))
 
-(define (msg.do_quit? m) (not (= (msg._do_quit m) 0)))
-
-
-;;
+;; animations
 
 (define (animation . frames)
   (vector (list->vector frames) -1))
@@ -57,19 +97,6 @@ struct msg {
   (when (< (animation.at a) 0)
     (animation.at! a (- (vector-length (animation.frames a)) 1)))
   (animation.peek a))
-
-;;
-
-(define (cmd->string name)
-  (call-with-input-pipe name read-all))
-
-(define file->string read-all)
-
-(define (dnL . args)
-  (for-each
-    (lambda (it) (display it) (display " "))
-    args)
-  (newline))
 
 ;;
 
@@ -97,7 +124,7 @@ struct msg {
     (sprintf "~A:~A.~A" hr min
         (string-pad (number->string msec) 2 #\0))))
 
-;;
+;; get-mpd
 
 (define sep "\a")
 
@@ -114,6 +141,7 @@ struct msg {
 
 (define paused
   (animation
+    "   (__"
     "   (__"
     "   (__"
     "  .(__"
@@ -145,23 +173,6 @@ struct msg {
 
 ;;
 
-(define (msg->string m desktop-names)
-  (let ( (ret
-           (apply string-append
-             (map
-               (lambda (i name)
-                 (let ( (indc
-                          (cond ((= i (msg.current m)) ":")
-                                ((> (msg.urgent m i) 0) "!")
-                                ((> (msg.windows m i) 0) ".")
-                                (else #f))) )
-                   (or (and indc (string-append indc name " ")) "")))
-               '(0 1 2 3 4 5)
-               desktop-names))) )
-    (substring ret 0 (- (string-length ret) 1))))
-
-;;
-
 (define (colorize a b)
   (sprintf "%{F~A}%{B~A}" a b))
 
@@ -177,26 +188,20 @@ struct msg {
     " (oo"
     "★(-o"))
 
+(define desktop-names
+  '("lov♡"
+    "kis♡"
+    "ya ♡"
+    "2 ♡♡"
+    "♡jx "
+    "(vv)"))
+
 (define bar-cmd #<#CMD
   ~/dotfiles/_wm/bar/lemonbar -f "lucy tewi:pixelsize=10" \
   -f "Kochi Gothic:pixelsize=10:antialias=false" \
   -B "#{colors.bg}" -F "#{colors.fg}" -g x12
 CMD
 )
-
-(define desktop-names
-  '("lov♡" "kis♡" "ya ♡"
-    "2 ♡♡" "♡jx " "(vv)"))
-
-(define (get-mqd for)
-  (call/cc
-    (lambda (return)
-      (let loop ( (num -1) )
-        (if (>= num 0)
-            (return num)
-            (begin
-              ; (file-select #f #f 0.01)
-              (loop (mq-open for open/rdonly))))))))
 
 (define (run)
   (let ( (mqd (get-mqd "/monsterwm"))
