@@ -1,4 +1,4 @@
-;; chicken sceme
+;; chicken scheme
 
 (import foreign)
 (use posix
@@ -65,9 +65,9 @@ struct msg {
              (map
                (lambda (i name)
                  (let ( (indc
-                          (cond ((= (msg.current m) i) ":")
+                          (cond ((= (msg.current m) i) "\\")
                                 ((> (msg.urgent m i) 0) "!")
-                                ((> (msg.windows m i) 0) ".")
+                                ((> (msg.windows m i) 0) " ")
                                 (else #f))) )
                    (or (and indc (string-append indc name " ")) "")))
                '(0 1 2 3 4 5)
@@ -110,8 +110,8 @@ struct msg {
       (cond ((< capacity 9)  (system "notify-send -u critical 'critcal battery'"))
             ((< capacity 15) (system "notify-send 'low battery'"))))
     (sprintf "~A~A" capacity
-      (case status ((#\D) ".")
-                   ((#\C #\F) ":")
+      (case status ((#\D) " ")
+                   ((#\C #\F) "c")
                    ((#\U) "!")
                    (else "?")))))
 
@@ -121,7 +121,7 @@ struct msg {
           (min  (substring time 2 4))
           (sec  (string->number (substring time 4 6)))
           (msec (- sec (modulo sec 3))) )
-    (sprintf "~A:~A.~A" hr min
+    (sprintf "~A ~A ~A" hr min
         (string-pad (number->string msec) 2 #\0))))
 
 ;; get-mpd
@@ -176,7 +176,7 @@ struct msg {
 (define (colorize a b)
   (sprintf "%{F~A}%{B~A}" a b))
 
-(define colors.bg "#191919")
+(define colors.bg "#222222")
 (define colors.fg "#AAAAAA")
 (define colors.normal (colorize colors.bg colors.fg))
 (define colors.invert (colorize colors.fg colors.bg))
@@ -189,12 +189,12 @@ struct msg {
     "★(-o"))
 
 (define desktop-names
-  '("lov♡"
-    "kis♡"
-    "ya ♡"
-    "2 ♡♡"
-    "♡jx "
-    "(vv)"))
+  '("('`"
+    "(><"
+    "(//"
+    "(oo"
+    "(--"
+    "($$"))
 
 (define bar-cmd #<#CMD
   ~/dotfiles/_wm/bar/lemonbar -f "lucy tewi:pixelsize=10" \

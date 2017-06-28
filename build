@@ -1,1 +1,2 @@
 csc -optimize-level 3 lemons.scm -lrt
+csc jack_toggle.scm -ljack
