@@ -1,2 +1,5 @@
-csc -optimize-level 3 lemons.scm -lrt
+#!/bin/sh
+
+# csc -optimize-level 3 lemons.scm -lrt
+csc -optimize-level 3 citrus.scm
 csc jack_toggle.scm -ljack

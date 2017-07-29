@@ -1,8 +1,8 @@
 ;; chicken scheme
 
 (import foreign)
+;; todo
 (use posix
-     lolevel
      utf8-srfi-13
      irregex
      utils)
@@ -19,61 +19,6 @@
     (lambda (it) (display it) (display " "))
     args)
   (newline))
-
-;; ffi
-
-#>
-#include <mqueue.h>
-
-struct msg {
-  int do_quit;
-  int current;
-  int windows[6];
-  int urgent[6];
-};
-<#
-
-(define mq-open
-  (foreign-lambda int "mq_open" c-string int))
-(define mq-receive
-  (foreign-lambda int "mq_receive" int c-pointer int c-pointer))
-
-(define (get-mqd for)
-  (call/cc
-    (lambda (return)
-      (let loop ( (num -1) )
-        (if (>= num 0)
-            (return num)
-            (begin
-              ;; (file-select #f #f 0.01)
-              (loop (mq-open for open/rdonly))))))))
-
-(define-foreign-type msg* (c-pointer "struct msg"))
-
-(define (make-msg)
-  (set-finalizer!
-    (allocate (foreign-type-size "struct msg"))
-    free))
-
-(define msg.do_quit? (foreign-lambda* bool ((msg* m)) "C_return(m->do_quit);"))
-(define msg.current  (foreign-lambda* int  ((msg* m)) "C_return(m->current);"))
-(define msg.windows  (foreign-lambda* int  ((msg* m) (int at)) "C_return(m->windows[at]);"))
-(define msg.urgent   (foreign-lambda* int  ((msg* m) (int at)) "C_return(m->urgent[at]);"))
-(define (msg->string m desktop-names)
-  (let ( (ret
-           (apply string-append
-             (map
-               (lambda (i name)
-                 (let ( (indc
-                          (cond ((= (msg.current m) i) "\\")
-                                ((> (msg.urgent m i) 0) "!")
-                                ((> (msg.windows m i) 0) " ")
-                                (else #f)))
-                        (is-dead (and (= (msg.current m) i) (= (msg.windows m i) 0))) )
-                   (or (and indc (string-append indc name " ")) "")))
-               '(0 1 2 3 4 5)
-               desktop-names))) )
-    (substring ret 0 (- (string-length ret) 1))))
 
 ;; animations
 
@@ -121,8 +66,11 @@ struct msg {
           (hr   (substring time 0 2))
           (min  (substring time 2 4))
           (sec  (string->number (substring time 4 6)))
-          (msec (- sec (modulo sec 3))) )
-    (sprintf "~A ~A ~A" hr min
+          (msec (- sec (modulo sec 3)))
+          (date (cmd->string "date +'%b%d'"))
+          (mon  (substring date 0 3))
+          (day  (substring date 3 5)) )
+    (sprintf "~A~A ~A:~A.~A" mon day hr min
         (string-pad (number->string msec) 2 #\0))))
 
 ;; get-mpd
@@ -189,56 +137,24 @@ struct msg {
     " (oo"
     "★(-o"))
 
-(define desktop-names
-  '("('`"
-    "(><"
-    "(//"
-    "(oo"
-    "(--"
-    "($$"))
+(define (right)
+  (sprintf "~A #[fg=colour233,bold]< ~A < ~A < ~A\n"
+    (animation.next! wink)
+    (get-mpd)
+    (get-time)
+    (get-battery)
+    ))
 
-(define bar-cmd #<#CMD
-  ~/dotfiles/_wm/bar/lemonbar -f "lucy tewi:pixelsize=10" \
-  -f "Kochi Gothic:pixelsize=10:antialias=false" \
-  -B "#{colors.bg}" -F "#{colors.fg}" -g x12
-CMD
-)
+(display (right))
 
-(define (run)
-  (let ( (mqd (get-mqd "/monsterwm"))
-         (msg (make-msg))
-         (bar
-           (if (and (> (length (argv)) 1) (equal? (cadr (argv)) "debug"))
-               (current-output-port)
-               (open-output-pipe bar-cmd))) )
-    (call/cc
-      (lambda (quit)
-        (let loop ()
-          (let-values ( ((rd _) (file-select mqd #f 1)) )
-            (when rd
-              (mq-receive mqd msg (foreign-type-size "struct msg") #f)
-              (when (msg.do_quit? msg)
-                (quit)))
-            (display
-              (sprintf "%{l}~A~A~A %{c}~A %{r}~A~A ♡ ~A ♡ ~A~A\n"
-                colors.normal
-                (msg->string msg desktop-names)
-                colors.invert
+(define fifo-file "/home/mel/.citrus")
+(if (not (fifo? fifo-file))
+  (create-fifo fifo-file))
+(define out (file-open fifo-file open/wronly))
+(let loop ( (text (right)) )
+  (file-write out text)
+  (display text)
+  (sleep 1)
+  (loop (right))
+  )
 
-                (get-mpd)
-
-                colors.normal
-                (animation.next! wink)
-                (get-time)
-                (get-battery)
-                colors.reset
-              )
-              bar
-            )
-            (flush-output bar)
-            (loop)
-            ))))
-    (close-output-pipe bar)
-    (dnL "goodbye")))
-
-(run)
