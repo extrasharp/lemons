@@ -24,12 +24,13 @@ if arg[1] == "next" then
     os.execute("mpc -q pause")
   end
 elseif arg[1] == "prev" then
-  local _, _, sec = t:find("%:(%d+)%/")
+  local _, _, min, sec = t:find("(%d+)%:(%d+)%/")
   if not sec then return end
 
+  min = tonumber(min)
   sec = tonumber(sec)
 
-  if playing and sec > 6 then
+  if playing and min < 1 and sec > 3 then
       os.execute("mpc -q seek 0")
   else
       os.execute("mpc -q prev")
