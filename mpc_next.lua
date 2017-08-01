@@ -27,10 +27,9 @@ elseif arg[1] == "prev" then
   local _, _, min, sec = t:find("(%d+)%:(%d+)%/")
   if not sec then return end
 
-  min = tonumber(min)
-  sec = tonumber(sec)
+  sec = tonumber(sec) + 60 * tonumber(min)
 
-  if playing and min < 1 and sec > 3 then
+  if playing and sec > 3 then
       os.execute("mpc -q seek 0")
   else
       os.execute("mpc -q prev")
