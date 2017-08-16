@@ -66,12 +66,16 @@
           (hr   (substring time 0 2))
           (min  (substring time 2 4))
           (sec  (string->number (substring time 4 6)))
-          (msec (- sec (modulo sec 3)))
-          (date (cmd->string "date +'%b%d'"))
+          (msec (- sec (modulo sec 3))) )
+    ; (sprintf "~A:~A.~A" hr min
+        ; (string-pad (number->string msec) 2 #\0))))
+    (sprintf "~A:~A" hr min)))
+
+(define (get-date)
+  (let* ( (date (cmd->string "date +'%b%d'"))
           (mon  (substring date 0 3))
           (day  (substring date 3 5)) )
-    (sprintf "~A~A ~A:~A.~A" mon day hr min
-        (string-pad (number->string msec) 2 #\0))))
+    (sprintf "~A~A" mon day)))
 
 ;; get-mpd
 
@@ -137,15 +141,23 @@
     " (oo"
     "★(-o"))
 
-(define (right)
-  (sprintf "~A #[fg=colour233,bold]< ~A < ~A < ~A\n"
-    (animation.next! wink)
-    (get-mpd)
-    (get-time)
-    (get-battery)
-    ))
+(define ct 0)
+(define pad 5)
 
-(display (right))
+(define (right)
+  (let ( (b (get-battery)) )
+    (set! ct (+ ct 0.5))
+    (sprintf "~A #[fg=colour233,bold]< ~A < ~A\n"
+      (animation.next! wink)
+      (get-mpd)
+      (let ( (m (modulo (inexact->exact (floor ct)) 5)) )
+        (cond
+          ((= m 0) (string-pad (get-time) pad))
+          ((= m 1) (string-pad b pad))
+          ((= m 2) (string-pad (get-date) pad))
+          ((= m 3) (string-pad (get-time) pad))
+          ((= m 4) (string-pad b pad))
+        )))))
 
 (define fifo-file "/home/mel/.citrus")
 (if (not (fifo? fifo-file))
@@ -153,7 +165,7 @@
 (define out (file-open fifo-file open/wronly))
 (let loop ( (text (right)) )
   (file-write out text)
-  (display text)
+  ; (display text)
   (sleep 1)
   (loop (right))
   )
