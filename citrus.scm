@@ -5,7 +5,8 @@
 (use posix
      utf8-srfi-13
      irregex
-     utils)
+     utils
+     )
 
 ;; util
 

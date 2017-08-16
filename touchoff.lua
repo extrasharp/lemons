@@ -2,7 +2,7 @@
 
 if    arg[1] ~= "on"
   and arg[1] ~= "off" then
-    return 
+    return
 end
 
 local string = require "string"
