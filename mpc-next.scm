@@ -2,14 +2,9 @@
 
 (define args (cdddr (argv)))
 
-; todo abstract out
 (when
   (or (null? args)
-    (not
-      (or
-        (string=? (car args) "next")
-        (string=? (car args) "toggle")
-        (string=? (car args) "prev"))))
+    (not (member (car args) '("next" "toggle" "prev"))))
   (exit))
 
 ;
@@ -42,13 +37,18 @@
     (send "status")
     (let* (
       (results (get-results i))
-      (time (symbol->string (get-keyword #:time results)))
       (state (symbol->string (get-keyword #:state results)))
-      (playing (string=? state "play"))
+      (time
+        (if (not (string=? state "stop"))
+            (symbol->string (get-keyword #:time results))
+            #f))
       (secs
-        (string->number
-          (irregex-match-substring
-            (irregex-search '(: ($ integer) #\:) time) 1)))
+        (if time
+            (string->number
+              (irregex-match-substring
+                (irregex-search '(: ($ integer) #\:) time) 1))
+            0))
+      (playing (string=? state "play"))
       )
       (cond
         ((string=? cmd "next")
