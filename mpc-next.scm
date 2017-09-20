@@ -2,9 +2,9 @@
 
 (define args (cdddr (argv)))
 
-(when
-  (or (null? args)
-    (not (member (car args) '("next" "toggle" "prev"))))
+(when (or (null? args)
+          (not (member (car args) '("next" "toggle" "prev")))
+          )
   (exit))
 
 ;
@@ -57,7 +57,7 @@
             (send "pause"))
           )
         ((string=? cmd "prev")
-          (if (and playing (> secs 4))
+          (if (and playing (> secs 5))
             (send "seekcur 0")
             (send "previous"))
           (when (not playing)

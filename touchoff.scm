@@ -2,7 +2,8 @@
 
 (define args (cdddr (argv)))
 (when (or (null? args)
-        (not (member (car args) '("on" "off"))))
+          (not (member (car args) '("on" "off")))
+          )
   (exit))
 (define arg (car args))
 
