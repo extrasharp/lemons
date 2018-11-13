@@ -1,4 +1,6 @@
 #!/bin/csi -s
 
+(import chicken.process)
+
 (system "csc -O3 citrus.scm")
-(system "csc jack_toggle.scm -ljack")
+(system "csc jack_toggle.scm -L -ljack")

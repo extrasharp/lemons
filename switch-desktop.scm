@@ -1,17 +1,21 @@
 #!/bin/csi -s
 
+(import
+  srfi-1
+  chicken.file
+  chicken.file.posix
+  chicken.process
+  chicken.process-context
+  chicken.io
+  chicken.irregex
+  )
+
 (define args (cdddr (argv)))
 (when (or (null? args)
           (not (member (car args) '("next" "prev")))
           )
   (exit))
 (define cmd (car args))
-
-(use
-  (srfi 1)
-  posix
-  utils
-  )
 
 (define bg-dir "/home/mel/images/bgs")
 
@@ -27,11 +31,11 @@
       (directory bg-dir))
     ))
 
-(define last-feh (read-all "/home/mel/.fehbg"))
+(define last-feh (with-input-from-file "/home/mel/.fehbg" read-string))
 (define last-desktop
   (irregex-match-substring
     (irregex-search
-     '(: #\' ($ (+ any)) #\') last-feh)
+     '(: #\' ($ #\/ (+ any)) #\') last-feh)
     1)
   )
 

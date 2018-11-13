@@ -3,11 +3,15 @@
 ; todo
 ;   truncate song names if too long
 ;   get-mpc can probably use the tcp interface
+;     some issue when mpc cant start cuz of jack idek
 
-(use
-  posix
-  irregex
-  utils
+(import
+  srfi-13
+  chicken.format
+  chicken.file.posix
+  chicken.process
+  chicken.irregex
+  chicken.io
   )
 
 (define (anim . frames)
@@ -38,10 +42,10 @@
   (let* (
     (capacity (or (string->number
                     (string-trim-right
-                      (read-all "/sys/class/power_supply/BAT1/capacity")))
+                      (with-input-from-file "/sys/class/power_supply/BAT1/capacity" read-string)))
                   0))
     (status (string-ref
-              (read-all "/sys/class/power_supply/BAT1/status")
+              (with-input-from-file "/sys/class/power_supply/BAT1/status" read-string)
               0))
     )
     (when (equal? status #\D)
@@ -61,7 +65,7 @@
 
 (define (get-time)
   (let* (
-    (time (call-with-input-pipe "date +'%I%M%S'" read-all))
+    (time (call-with-input-pipe "date +'%I%M%S'" (cut read-string #f <>)))
     (hr   (substring time 0 2))
     (min  (substring time 2 4))
     (sec  (string->number (substring time 4 6)))
@@ -74,7 +78,7 @@
 
 (define (get-date)
   (let* (
-    (date (call-with-input-pipe "date +'%b%d'" read-all))
+    (date (call-with-input-pipe "date +'%b%d'" (cut read-string #f <>)))
     (mon  (substring date 0 3))
     (day  (substring date 3 5))
     )
@@ -111,6 +115,7 @@
     "z  (__"
   ))
 
+; TODO some type of error when mpc isnt started or something
 (define (get-mpd)
   (call/cc
     (lambda (return)
@@ -123,6 +128,7 @@
         (when (not (and (string? info-str)
                         (string? status-str)))
           (return (anim.next! paused)))
+        ; (display info-str) (newline)
         (let (
           (info (map
                   (lambda (str)
@@ -130,6 +136,8 @@
                   (irregex-split sep info-str)))
           (is-playing (string-contains status-str "playing"))
           )
+          ; (display info)
+          ; (newline)
           (let-values (
             ((artist title file album) (apply values info))
             )

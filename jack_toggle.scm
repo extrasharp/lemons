@@ -23,6 +23,8 @@ try_open_jack(void)
 (define try-jack
   (foreign-lambda bool "try_open_jack"))
 
+(import chicken.process)
+
 (if (try-jack)
     (system "jack_control stop")
     (system "jack_control start"))

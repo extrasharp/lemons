@@ -1,5 +1,13 @@
 #!/bin/csi -s
 
+(import
+  (only chicken.tcp tcp-connect)
+  chicken.process-context
+  chicken.irregex
+  chicken.io
+  chicken.keyword
+  )
+
 (define args (cdddr (argv)))
 
 (when (or (null? args)
@@ -8,10 +16,6 @@
   (exit))
 
 ;
-
-(use
-  (only tcp tcp-connect)
-  irregex)
 
 (define cmd (car args))
 

@@ -1,13 +1,17 @@
 #!/bin/csi -s
 
+(import
+  chicken.process
+  chicken.process-context
+  chicken.format
+  )
+
 (define args (cdddr (argv)))
 (when (or (null? args)
           (not (member (car args) '("on" "off")))
           )
   (exit))
 (define arg (car args))
-
-(use posix)
 
 (let* (
   (num (call-with-input-pipe
