@@ -1,4 +1,4 @@
-#!/bin/csi -s
+#!/bin/chicken-csi -s
 
 (import
   srfi-1

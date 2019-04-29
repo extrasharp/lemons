@@ -1,4 +1,4 @@
-#!/bin/csi -s
+#!/bin/chicken-csi -s
 
 ; todo
 ;   truncate song names if too long
