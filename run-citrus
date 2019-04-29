@@ -1,0 +1,5 @@
+#!/bin/sh
+
+rm /home/mel/.citrus ;
+mkfifo /home/mel/.citrus ;
+~/dotfiles/_wm/lemons/citrus.lisp > /home/mel/.citrus ;

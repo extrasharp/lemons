@@ -3,7 +3,7 @@
 (require 'sb-bsd-sockets)
 (use-package 'sb-bsd-sockets)
 
-(when (or (= (length *posix-argv*) 1)
+(when (or (/= (length *posix-argv*) 2)
           (not (member
                  (cadr *posix-argv*)
                  '("next" "toggle" "prev")
@@ -27,7 +27,7 @@
             (loop for line = (read-line mpd-stream nil)
                   while (string/= line "OK")
                   collect line)))
-         (ht (make-hash-table :test #'equal)))
+        (ht (make-hash-table :test #'equal)))
     (loop for result in results
           do (let* ((cut (position #\: result))
                     (key (subseq result 0 cut))

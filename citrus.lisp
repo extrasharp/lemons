@@ -66,13 +66,15 @@
 (defun gen-bar ()
   (let ((batt (get-battery))
         (tm (get-time)))
-    (setf *bar-cycle* (+ *bar-cycle* 1))
-    (format nil "~a < ~5@a"
+    (setf *bar-cycle* (+ *bar-cycle* 0.5))
+    (format nil "~a #[fg=colour233,bold]~5@a"
             (anim-next *wink*)
-            (if (evenp *bar-cycle*)
+            (if (evenp (floor *bar-cycle*))
               batt
               tm))))
 
 (loop
-  (print (gen-bar))
+  (princ (gen-bar))
+  (terpri)
+  (finish-output)
   (sleep 1))

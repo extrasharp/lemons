@@ -1,6 +1,6 @@
 #!/bin/sbcl --script
 
-(when (or (= (length *posix-argv*) 1)
+(when (or (/= (length *posix-argv*) 2)
           (not (member
                  (cadr *posix-argv*)
                  '("next" "prev")
@@ -10,9 +10,9 @@
 (defun read-file (pname)
   (format nil "~{~a~^~%~}"
     (with-open-file (stream pname)
-      (loop :for line := (read-line stream nil)
-            :while line
-            :collect line))))
+      (loop for line = (read-line stream nil)
+            while line
+            collect line))))
 
 (let* ((cmd (cadr *posix-argv*))
        (files
