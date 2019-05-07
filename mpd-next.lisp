@@ -53,7 +53,8 @@
              0)))
   (flet ((send (cmd)
            (write-line cmd mpd-stream)
-           (finish-output mpd-stream)))
+           (finish-output mpd-stream)
+           (read-line mpd-stream)))
     (cond
       ((string-equal cmd "next")
        (send "next")

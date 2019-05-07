@@ -61,20 +61,17 @@
               "★(-o")
     :at 0))
 
-(defvar *bar-cycle* 0)
-
 (defun gen-bar ()
   (let ((batt (get-battery))
         (tm (get-time)))
-    (setf *bar-cycle* (+ *bar-cycle* 0.5))
-    (format nil "~a #[fg=colour233,bold]~5@a"
+    (format nil "~a #[fg=colour233,bold]~5@a ~4@a"
             (anim-next *wink*)
-            (if (evenp (floor *bar-cycle*))
-              batt
-              tm))))
+            tm
+            batt)))
 
 (loop
-  (princ (gen-bar))
-  (terpri)
-  (finish-output)
+  (with-open-file (stream "~/.citrus" :direction :output :if-exists :supersede)
+    (princ (gen-bar) stream)
+    (terpri stream)
+    (finish-output stream))
   (sleep 1))

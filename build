@@ -1,6 +1,3 @@
-#!/bin/chicken-csi -s
+#!/bin/sh
 
-(import chicken.process)
-
-(system "chicken-csc -O3 citrus.scm")
-(system "chicken-csc jack_toggle.scm -L -ljack")
+gcc jack_toggle.c -o jack_toggle -ljack

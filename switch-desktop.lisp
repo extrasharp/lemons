@@ -30,9 +30,8 @@
                 (end (position #\' feh-str :from-end t)))
            (pathname (subseq feh-str (+ start 1) end))))
        (next-file
-         (let* ((pos (position-if
-                       (lambda (str) (string= (pathname-name last-file) str))
-                       file-names))
+         (let* ((pos (position (pathname-name last-file) file-names
+                               :test #'string=))
                 (next-idx
                   (cond
                     ((not pos) 0)

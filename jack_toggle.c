@@ -1,10 +1,7 @@
-#>
-
 #include <jack/jack.h>
+#include <stdlib.h>
 
-int
-try_open_jack(void)
-{
+int is_jack_running(void) {
     jack_status_t status;
     jack_client_t *c = jack_client_open("x", JackNoStartServer, &status);
 
@@ -18,13 +15,10 @@ try_open_jack(void)
     return 1;
 }
 
-<#
-
-(define try-jack
-  (foreign-lambda bool "try_open_jack"))
-
-(import chicken.process)
-
-(if (try-jack)
-    (system "jack_control stop")
-    (system "jack_control start"))
+int main(void) {
+    if (is_jack_running()) {
+        system("/usr/bin/jack_control stop");
+    } else {
+        system("/usr/bin/jack_control start");
+    }
+}
