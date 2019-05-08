@@ -11,7 +11,8 @@
   (exit))
 
 (defun init-mpd-connection (socket)
-  (socket-connect socket #(127 0 0 1) 6600)
+ ;(socket-connect socket #(127 0 0 1) 6600)
+  (socket-connect socket (posix-getenv "MPD_HOST"))
   (let ((mpd-stream
           (socket-make-stream socket
                               :input t
@@ -36,10 +37,11 @@
     ht))
 
 (let* ((cmd (cadr *posix-argv*))
-       (mpd-socket
-         (make-instance 'inet-socket
-                        :type :stream
-                        :protocol :tcp))
+      ;(mpd-socket
+      ;  (make-instance 'inet-socket
+      ;                 :type :stream
+      ;                 :protocol :tcp))
+       (mpd-socket (make-instance 'local-socket :type :stream))
        (mpd-stream (init-mpd-connection mpd-socket))
        (status (get-status mpd-stream))
        (state (gethash "state" status))

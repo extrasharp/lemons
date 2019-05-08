@@ -1,3 +1,0 @@
-#!/bin/sh
-
-gcc jack_toggle.c -o jack_toggle -ljack
