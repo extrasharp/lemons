@@ -1,5 +1,7 @@
 #!/bin/sbcl --script
 
+; todo check inputs
+
 (defconstant +brightness-file+ "/sys/class/backlight/amdgpu_bl0/brightness")
 (defconstant +min-brightness+ 1)
 (defconstant +max-brightness+ 190)

@@ -1,4 +1,21 @@
 lemons
 
-todo:
-  update readme
+various scripts
+
+brightness.lisp:
+  - adjust screen brightness
+
+mpd-next.lisp:
+  - move to next/previous song while remaining paused
+  - ipod style "jump to start of song" behavior when moving to previous song
+  - toggle play/pause
+
+switch-desktop.lisp
+  - cycle through desktops with feh
+
+citrus.lisp
+  - tmux status bar
+  - writes to a file ~/.citrus
+
+touchoff.scm
+  - turn wacom pen and touch tablet touch capabilities off
