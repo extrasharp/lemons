@@ -70,7 +70,7 @@
             batt)))
 
 (loop
-  (with-open-file (stream "~/.citrus" :direction :output :if-exists :supersede)
+  (with-open-file (stream "/tmp/.citrus" :direction :output :if-exists :supersede)
     (princ (gen-bar) stream)
     (terpri stream)
     (finish-output stream))
