@@ -18,9 +18,8 @@
       (princ to stream))))
 
 (let ((current-brightness
-        (parse-integer
-          (with-open-file (stream +brightness-file+)
-            (read-line stream nil)))))
+        (with-open-file (stream +brightness-file+)
+          (read stream nil))))
   (if (= (length *posix-argv*) 1)
       (progn
         (princ current-brightness)

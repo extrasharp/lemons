@@ -35,9 +35,9 @@
     (when (char= status #\D)
       (cond
         ((< capacity 9)
-          (run-program "/bin/notify-send" '("-u" "critical" "critcal battery")))
+         (run-program "/bin/notify-send" '("-u" "critical" "critcal battery")))
         ((< capacity 15)
-          (run-program "/bin/notify-send" '("low battery")))))
+         (run-program "/bin/notify-send" '("low battery")))))
     (format nil "~a~a"
             capacity
             (case status

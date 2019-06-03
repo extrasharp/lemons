@@ -5,17 +5,23 @@ various scripts
 brightness.lisp:
   - adjust screen brightness
 
+citrus.lisp
+  - tmux status bar
+  - writes to a file ~/.citrus
+
 mpd-next.lisp:
   - move to next/previous song while remaining paused
   - ipod style "jump to start of song" behavior when moving to previous song
   - toggle play/pause
 
+screenshot.lisp
+  - take a screenshot of all or part of the screen
+
 switch-desktop.lisp
   - cycle through desktops with feh
 
-citrus.lisp
-  - tmux status bar
-  - writes to a file ~/.citrus
-
-touchoff.scm
+touchoff.lisp
   - turn wacom pen and touch tablet touch capabilities off
+
+volume.lisp
+  - change or mute volume
