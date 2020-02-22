@@ -24,12 +24,12 @@
 (defun get-battery ()
   (let* ((capacity
            (or (parse-integer
-                 (with-open-file (stream "/sys/class/power_supply/BAT1/capacity")
+                 (with-open-file (stream "/sys/class/power_supply/BAT0/capacity")
                    (read-line stream nil)))
                0))
          (status
            (elt
-             (with-open-file (stream "/sys/class/power_supply/BAT1/status")
+             (with-open-file (stream "/sys/class/power_supply/BAT0/status")
                (read-line stream nil))
              0)))
     (when (char= status #\D)

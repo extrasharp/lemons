@@ -14,4 +14,6 @@
     ((string-equal cmd "down")
      (run-program "/bin/amixer" `("-q" "sset" "Master" "2-")))
     ((string-equal cmd "mute")
+     (run-program "/bin/amixer" `("-D" "pulse" "-q" "sset" "Headphones" "unmute"))
+     (run-program "/bin/amixer" `("-q" "sset" "Speaker" "unmute"))
      (run-program "/bin/amixer" `("-q" "sset" "Master" "toggle")))))

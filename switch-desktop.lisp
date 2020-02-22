@@ -22,7 +22,7 @@
              (make-pathname
                :name :wild
                :type :wild
-               :defaults #p"/home/mel/images/bgs/"))))
+               :defaults #p"/home/mel/images/_bgs/"))))
        (file-names (map 'list #'pathname-name files))
        (last-file
          (let* ((feh-str (read-file #p"/home/mel/.fehbg"))
