@@ -2,20 +2,41 @@
 
 ; todo check inputs
 
-(defconstant +brightness-file+ "/sys/class/backlight/amdgpu_bl0/brightness")
-(defconstant +min-brightness+ 1)
-(defconstant +max-brightness+ 190)
-(defconstant +brightness-jump+ 23)
-
 (defun clamp (val valmin valmax)
   (max (min val valmax) valmin))
 
+(defun to-frange (val bottom top)
+  (let ((range (- top bottom))
+        (adj-val (- val bottom)))
+    (float (/ adj-val range))))
+
+(defun from-frange (fr bottom top)
+  (let ((range (- top bottom)))
+    (floor (+ bottom (* range fr)))))
+
+;
+
+(defconstant +brightness-file+ "/sys/class/backlight/intel_backlight/brightness")
+(defconstant +min-brightness+ 10)
+(defconstant +max-brightness+ 450)
+(defconstant +brightness-ratio+ (/ 1 6))
+
 (defun set-brightness (to)
-  (let ((to (clamp to 1 255)))
+  ; (let ((to (clamp to +min-brightness+ +max-brightness+)))
     (with-open-file (stream +brightness-file+
                             :direction :output
                             :if-exists :overwrite)
-      (princ to stream))))
+      (princ to stream)))
+
+(defun move-brightness (current-brightness fl)
+  (let* ((curr-frange (to-frange current-brightness
+                                +min-brightness+
+                                +max-brightness+))
+         (next-frange (expt (clamp (+ fl (expt curr-frange 1/2)) 0. 1.) 2))
+         (next-brightness (from-frange next-frange
+                                       +min-brightness+
+                                       +max-brightness+)))
+    (set-brightness next-brightness)))
 
 (let ((current-brightness
         (with-open-file (stream +brightness-file+)
@@ -28,14 +49,14 @@
         (cond
           ((parse-integer command :junk-allowed t)
            (set-brightness (parse-integer command)))
+          ((string= command "++")
+           (set-brightness +max-brightness+))
+          ((string= command "--")
+           (set-brightness +min-brightness+))
           ((string= command "+")
-           (set-brightness (clamp (+ current-brightness +brightness-jump+)
-                                  +min-brightness+
-                                  +max-brightness+)))
+           (move-brightness current-brightness +brightness-ratio+))
           ((string= command "-")
-           (set-brightness (clamp (- current-brightness +brightness-jump+)
-                                  +min-brightness+
-                                  +max-brightness+)))
+           (move-brightness current-brightness (- +brightness-ratio+)))
           ((string= command "stay")
            (set-brightness (+ current-brightness 1))
            (set-brightness current-brightness))
