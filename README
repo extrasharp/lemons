@@ -17,7 +17,7 @@ mpd-next.lisp:
 screenshot.lisp
   - take a screenshot of all or part of the screen
 
-switch-desktop.lisp
+switch-desktop.scm
   - cycle through desktops with feh
 
 touchoff.lisp
