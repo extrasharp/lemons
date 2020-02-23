@@ -2,7 +2,7 @@ lemons
 
 various scripts
 
-brightness.lisp:
+brightness.scm:
   - adjust screen brightness
 
 citrus.lisp

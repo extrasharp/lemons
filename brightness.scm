@@ -19,9 +19,7 @@
 
 (define (string->int str)
   (let ((val (call-with-input-string str read)))
-    (if (not (integer? val))
-        #f
-        (exact val))))
+    (and (integer? val) (exact val))))
 
 ;
 
@@ -31,10 +29,7 @@
 (define _step (/ 1 6))
 
 (define (get-brightness)
-  (let* ((i (open-input-file _filepath))
-         (val (read i)))
-    (close-port i)
-    val))
+  (call-with-input-file _filepath read))
 
 (define (set-brightness int)
   (call-with-output-file _filepath
@@ -51,7 +46,7 @@
 (let ((cmds (cdr (command-line))))
   (if (null? cmds)
       (println (get-brightness))
-      (let* ((str (car cmds)))
+      (let ((str (car cmds)))
         (cond
           ((string->int str) => set-brightness)
           ((string=? str "++")
