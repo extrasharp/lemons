@@ -18,12 +18,6 @@
 
 ;
 
-(define (string->int str)
-  (let ((val (call-with-input-string str read)))
-    (and (integer? val) val)))
-
-;
-
 (define _filepath "/sys/class/backlight/intel_backlight/brightness")
 (define _min 10)
 (define _max 450)
@@ -49,16 +43,16 @@
       (begin
         (display (get-brightness))
         (newline))
-      (let ((str (car cmds)))
+      (let ((cmd (car cmds)))
         (cond
-          ((string->int str) => set-brightness)
-          ((string=? str "++")
+          ((string->number cmd) => set-brightness)
+          ((string=? cmd "++")
            (set-brightness _max))
-          ((string=? str "--")
+          ((string=? cmd "--")
            (set-brightness _min))
-          ((string=? str "+")
+          ((string=? cmd "+")
            (move-brightness _step))
-          ((string=? str "-")
+          ((string=? cmd "-")
            (move-brightness (- _step)))
           (else
            (error "invalid argument" cmds))))))

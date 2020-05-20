@@ -2,26 +2,26 @@ lemons
 
 various scripts
 
-brightness.scm:
+brightness.ss:
   - adjust screen brightness
 
 citrus.lisp
   - tmux status bar
   - writes to a file ~/.citrus
 
-mpd-next.lisp:
+mpd-next.ss:
   - move to next/previous song while remaining paused
   - ipod style "jump to start of song" behavior when moving to previous song
   - toggle play/pause
 
-screenshot.lisp
+screenshot.ss
   - take a screenshot of all or part of the screen
 
-switch-desktop.scm
+switch-desktop.ss
   - cycle through desktops with feh
 
-touchoff.lisp
+touchoff.ss
   - turn wacom pen and touch tablet touch capabilities off
 
-volume.lisp
+volume.ss
   - change or mute volume
