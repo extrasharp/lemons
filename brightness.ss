@@ -1,4 +1,5 @@
-#!/bin/gsi
+#!/bin/guile
+!#
 
 (define (clamp val vmin vmax)
   (max (min val vmax) vmin))
@@ -6,11 +7,11 @@
 (define (to-zetone val vmin vmax)
   (let ((range (- vmax vmin))
         (adj-val (- val vmin)))
-    (inexact (/ adj-val range))))
+    (exact->inexact (/ adj-val range))))
 
 (define (from-zetone val vmin vmax)
   (let ((range (- vmax vmin)))
-    (exact (floor (+ vmin (* range val))))))
+    (inexact->exact (floor (+ vmin (* range val))))))
 
 (define (zetone-step-expt zt step x)
   (expt (clamp (+ (expt zt (/ 1 x)) step) 0. 1.) x))
@@ -19,7 +20,7 @@
 
 (define (string->int str)
   (let ((val (call-with-input-string str read)))
-    (and (integer? val) (exact val))))
+    (and (integer? val) val)))
 
 ;
 
@@ -45,7 +46,9 @@
 
 (let ((cmds (cdr (command-line))))
   (if (null? cmds)
-      (println (get-brightness))
+      (begin
+        (display (get-brightness))
+        (newline))
       (let ((str (car cmds)))
         (cond
           ((string->int str) => set-brightness)
